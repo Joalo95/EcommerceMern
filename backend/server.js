@@ -3,6 +3,7 @@ import express from "express";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import morgan from "morgan";
+import mercadopago from "mercadopago";
 import userRoutes from "./routes/userRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
@@ -12,6 +13,21 @@ import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 dotenv.config();
 
 connectDB();
+
+const mercadoPagoPublicKey = process.env.MERCADOPAGO_PUBLIC_KEY;
+
+if (!mercadoPagoPublicKey) {
+  console.log("Error: public key not defined");
+  process.exit(1);
+}
+
+const mercadoPagoAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+if (!mercadoPagoAccessToken) {
+  console.log("Error: access token not defined");
+  process.exit(1);
+}
+
+mercadopago.configurations.setAccessToken(mercadoPagoAccessToken);
 
 const app = express();
 
@@ -24,9 +40,59 @@ app.use(express.json());
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/orders", orderRoutes);
-app.get("/api/config/paypal", (req, res) =>
-  res.send(process.env.PAYPAL_CLIENT_ID)
-);
+app.get("/", function (req, res) {
+  res.status(200).render("index", { mercadoPagoPublicKey });
+});
+app.post("/process_payment", (req, res) => {
+  const { body } = req;
+  const { payer } = body;
+  const paymentData = {
+    transaction_amount: Number(body.transactionAmount),
+    token: body.token,
+    description: body.description,
+    installments: Number(body.installments),
+    payment_method_id: body.paymentMethodId,
+    issuer_id: body.issuerId,
+    payer: {
+      email: payer.email,
+      identification: {
+        type: payer.identification.docType,
+        number: payer.identification.docNumber
+      }
+    }
+  };
+
+  mercadopago.payment.save(paymentData)
+    .then(function (response) {
+      const { response: data } = response;
+
+      res.status(201).json({
+        detail: data.status_detail,
+        status: data.status,
+        id: data.id
+      });
+    })
+    .catch(function (error) {
+      console.log(error);
+      const { errorMessage, errorStatus } = validateError(error);
+      res.status(errorStatus).json({ error_message: errorMessage });
+    });
+});
+
+function validateError(error) {
+  let errorMessage = 'Unknown error cause';
+  let errorStatus = 400;
+
+  if (error.cause) {
+    const sdkErrorMessage = error.cause[0].description;
+    errorMessage = sdkErrorMessage || errorMessage;
+
+    const sdkErrorStatus = error.status;
+    errorStatus = sdkErrorStatus || errorStatus;
+  }
+
+  return { errorMessage, errorStatus };
+}
 
 const __dirname = path.resolve();
 
