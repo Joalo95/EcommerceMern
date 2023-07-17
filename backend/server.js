@@ -35,11 +35,33 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
+app.set("view engine", "html");
+app.engine("html", require("hbs").__express);
+app.set("views", path.join(__dirname, "views"))
+
+app.use(express.urlencoded({ extended: false }));
+app.use(express.static("./static"));
 app.use(express.json());
 
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/orders", orderRoutes);
+
+function validateError(error) {
+  let errorMessage = 'Unknown error cause';
+  let errorStatus = 400;
+
+  if (error.cause) {
+    const sdkErrorMessage = error.cause[0].description;
+    errorMessage = sdkErrorMessage || errorMessage;
+
+    const sdkErrorStatus = error.status;
+    errorStatus = sdkErrorStatus || errorStatus;
+  }
+
+  return { errorMessage, errorStatus };
+}
+
 app.get("/", function (req, res) {
   res.status(200).render("index", { mercadoPagoPublicKey });
 });
@@ -78,21 +100,6 @@ app.post("/process_payment", (req, res) => {
       res.status(errorStatus).json({ error_message: errorMessage });
     });
 });
-
-function validateError(error) {
-  let errorMessage = 'Unknown error cause';
-  let errorStatus = 400;
-
-  if (error.cause) {
-    const sdkErrorMessage = error.cause[0].description;
-    errorMessage = sdkErrorMessage || errorMessage;
-
-    const sdkErrorStatus = error.status;
-    errorStatus = sdkErrorStatus || errorStatus;
-  }
-
-  return { errorMessage, errorStatus };
-}
 
 const __dirname = path.resolve();
 

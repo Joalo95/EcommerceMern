@@ -1,0 +1,81 @@
+import React, { useState } from 'react'
+import { Image } from "@chakra-ui/react"
+import { Helmet } from 'react-helmet';
+import cover from './cover.jpg'
+import { Input, InputGroup, InputLeftElement, Textarea, Button } from "@chakra-ui/react"
+import { BsEnvelope } from 'react-icons/bs'
+import { GiPositionMarker } from 'react-icons/gi'
+import { HiOutlinePhone } from 'react-icons/hi'
+import './contactuscss.css'
+
+const Contactus = () => {
+    const [email, setemail] = useState('')
+    const [body, setbody] = useState('')
+
+    const handlesubmit = () => {
+        window.open(`mailto:joalonsort@gmail.com?subject=Sample&body=${body}`)
+    }
+    return (
+
+        <div className="contactUs">
+            <Helmet>
+                <title>Contacto</title>
+            </Helmet>
+            <div className="headerContact">
+                <Image className="imageContact" src='https://i.imgur.com/7rwaigw.jpg' alt="contactImage" objectFit="cover" />
+                <div className="text">
+                    <h2>Contacto</h2>
+                </div>
+
+            </div>
+
+            <div className="card-contact">
+                <div className="sendMsg">
+                    <h4>Envíanos un mensaje</h4>
+                    <div className="inputContact">
+                        <InputGroup width="450px" >
+                            <InputLeftElement pointerEvents="none" children={<BsEnvelope className='envolope' color="gray.300" />} />
+                            <Input value={email} onChange={e => setemail(e.target.value)} type="text" placeholder="ingresa tu correo" />
+                        </InputGroup>
+
+                    </div>
+                    <div className="textAreaCnt">
+                        <Textarea value={body} onChange={e => setbody(e.target.value)} width="450px" placeholder="como podemos ayudarte ..." height="200px" />
+                    </div>
+                    <div className="contentContact">
+                        <Button onClick={handlesubmit} borderRadius="90px" colorScheme="teal" variant="solid" size="180px" className="contactBtn">Enviar</Button>
+                    </div>
+
+                </div>
+                <div className="showAdrss">
+                    <div className="box">
+                        <div className="iconCtn"><GiPositionMarker opacity="0.8" /></div>
+                        <div className="adressCtn">
+
+                            <h3>Dirección</h3>
+                            <p>Uruguay</p>
+                        </div>
+                    </div>
+                    <div className="box">
+                        <div className="iconCtn"><HiOutlinePhone opacity="0.8" /></div>
+                        <div className="adressCtn">
+
+                            <h3>Trabaja con Nosotros</h3>
+                            <p className="infoCtn">rrhh@gmail.com</p>
+                        </div>
+                    </div>
+                    <div className="box">
+                        <div className="iconCtn"><BsEnvelope opacity="0.8" /></div>
+                        <div className="adressCtn">
+
+                            <h3>Soporte Técnico</h3>
+                            <p className="infoCtn">support@gmail.com</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export default Contactus
